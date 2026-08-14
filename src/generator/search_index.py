@@ -19,6 +19,7 @@ class SearchIndexBuilder:
             - normalized_term: for linking
             - term: Pali headword
             - preferred_translation: main translation
+            - alternative_translations: list of alternative translations
             - definition: short definition
             - entry_type: "major" or "minor"
             - tags: list of tags
@@ -31,6 +32,7 @@ class SearchIndexBuilder:
                 "normalized_term": normalized_term,
                 "term": term_data.get("term", ""),
                 "preferred_translation": term_data.get("preferred_translation", ""),
+                "alternative_translations": term_data.get("alternative_translations", []),
                 "definition": term_data.get("definition", ""),
                 "entry_type": term_data.get("entry_type", "minor"),
                 "tags": term_data.get("tags", []),

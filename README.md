@@ -198,12 +198,13 @@ The site generates a `search-index.json` file containing all terms with their:
 - `normalized_term`
 - `term` (Pali with diacritics)
 - `preferred_translation`
+- `alternative_translations` (array of alternative translation strings, if available)
 - `definition`
 - `entry_type`
 - `tags`
 - `part_of_speech`
 
-The client-side `search.js` loads this JSON and performs instant filtering as you type, using a heuristic scoring system that weights exact matches and term matches higher than definition matches.
+The client-side `search.js` loads this JSON and performs instant filtering as you type, using a heuristic scoring system that weights exact matches and term matches higher than definition matches. Matches against `alternative_translations` are scored lower than `preferred_translation` matches to prioritize preferred renderings.
 
 ## FAQ
 

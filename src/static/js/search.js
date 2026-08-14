@@ -132,6 +132,20 @@ class PaliDictionarySearch {
             score += 10;
         }
         
+        // Match in alternative translations (lower priority than preferred_translation)
+        if (entry.alternative_translations && Array.isArray(entry.alternative_translations)) {
+            for (const altTrans of entry.alternative_translations) {
+                const altLower = altTrans.toLowerCase();
+                if (altLower === queryLower) {
+                    score += 50;
+                } else if (altLower.startsWith(queryLower)) {
+                    score += 18;
+                } else if (altLower.includes(queryLower)) {
+                    score += 7;
+                }
+            }
+        }
+        
         // Match in definition (low priority, but still counts)
         const defLower = entry.definition.toLowerCase();
         if (defLower.includes(queryLower)) {
