@@ -143,20 +143,20 @@ class PaliDictionarySearch {
             const div = document.createElement('div');
             div.className = 'search-result';
             
-            // Build the link URL
+            // Build the link URL (normalized_term is already safe as a slug)
             const baseUrl = this.getBaseUrl();
-            const resultUrl = `${baseUrl}term/${result.normalized_term}.html`;
+            const resultUrl = `${baseUrl}term/${encodeURIComponent(result.normalized_term)}.html`;
             
-            // Highlight query in term and translation
-            const highlightedTerm = this.highlightQuery(result.term, query);
-            const highlightedTrans = this.highlightQuery(result.preferred_translation, query);
+            // Highlight query in term and translation (with HTML escaping)
+            const highlightedTerm = this.highlightQuery(this.escapeHtml(result.term), query);
+            const highlightedTrans = this.highlightQuery(this.escapeHtml(result.preferred_translation), query);
             
             div.innerHTML = `
                 <a href="${resultUrl}" style="text-decoration: none; color: inherit; display: block; padding: 0.5rem 0; border: none;">
                     <span class="search-result-term">${highlightedTerm}</span>
                     <span class="search-result-trans">${highlightedTrans}</span>
                     <span class="search-result-badge">
-                        <span class="badge badge-${result.entry_type}" style="margin: 0;">${result.entry_type}</span>
+                        <span class="badge badge-${this.escapeHtml(result.entry_type)}" style="margin: 0;">${this.escapeHtml(result.entry_type)}</span>
                     </span>
                 </a>
             `;
@@ -166,16 +166,21 @@ class PaliDictionarySearch {
     }
 
     /**
-     * Get the base URL for the site (handles /shiny-adventure-website/ style paths)
+     * Escape HTML special characters to prevent injection
+     */
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    /**
+     * Get the base URL for the site (uses relative path, no base URL needed)
      */
     getBaseUrl() {
-        // If we're in a subdirectory, we need to figure out the base
-        // For now, assume root-relative paths work
-        const path = window.location.pathname;
-        
-        // Simple heuristic: if the current path has multiple segments,
-        // we might be in a project site, but for now just return /
-        return '/';
+        // All URLs in this site are relative per-page, so base URL is empty
+        return '';
     }
 
     highlightQuery(text, query) {
@@ -202,7 +207,9 @@ class PaliDictionarySearch {
     }
 }
 
-// Initialize search when DOM is ready
+// Initialize search when DOM is ready (only if search elements are present)
 document.addEventListener('DOMContentLoaded', () => {
-    new PaliDictionarySearch();
+    if (document.querySelector('#search-input') && document.querySelector('#search-results')) {
+        new PaliDictionarySearch();
+    }
 });

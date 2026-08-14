@@ -38,13 +38,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Build site
-        working-directory: website
-        run: |
-          python3 build.py \
-            --data-dir ../shiny-adventure/terms \
-            --out dist \
-            --base-url /shiny-adventure-website/
+       - name: Build site
+         working-directory: website
+         run: |
+           python3 build.py \
+             --data-dir ../shiny-adventure/terms \
+             --out dist
 
       - name: Upload artifact for Pages
         uses: actions/upload-pages-artifact@v2

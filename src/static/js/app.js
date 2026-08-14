@@ -55,26 +55,7 @@
         // For now, just direct linking is sufficient
     }
 
-    /**
-     * Utility: Get the base URL of the site
-     */
-    window.getSiteBaseUrl = function() {
-        return '/';
-    };
 
-    /**
-     * Utility: Format a normalized term as a URL
-     */
-    window.getTermUrl = function(normalizedTerm) {
-        return getSiteBaseUrl() + 'term/' + normalizedTerm + '.html';
-    };
-
-    /**
-     * Utility: Get the tag URL
-     */
-    window.getTagUrl = function(tag) {
-        return getSiteBaseUrl() + 'tag/' + encodeURIComponent(tag) + '/index.html';
-    };
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {

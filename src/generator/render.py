@@ -9,46 +9,45 @@ from .linking import TermLinker
 class HTMLRenderer:
     """Renders terms and pages to HTML."""
 
-    def __init__(self, base_url: str = "/", linker: Optional[TermLinker] = None):
+    def __init__(self, linker: Optional[TermLinker] = None, data_repo_url: str = "https://github.com/YOUR_ORG/shiny-adventure"):
         """Initialize renderer.
         
         Args:
-            base_url: Base URL for the site (e.g. "/" or "/shiny-adventure-website/")
             linker: TermLinker instance for resolving related terms.
+            data_repo_url: URL to the data repository (for footer link).
         """
-        self.base_url = base_url.rstrip("/") or "/"
         self.linker = linker
+        self.data_repo_url = data_repo_url
 
     def escape_html(self, text: str) -> str:
         """Escape HTML special characters."""
         return html.escape(text) if text else ""
 
     def render_page_wrapper(self, content: str, title: str = "Pali Dictionary",
-                           page_type: str = "page") -> str:
+                           page_type: str = "page", page_path: str = "index.html") -> str:
         """Wrap content in a full HTML page structure.
         
         Args:
             content: The main content HTML.
             title: Page title.
             page_type: CSS class for body (for styling hooks).
+            page_path: The output-relative path of the page being rendered (e.g. "index.html", "term/dukkha.html", "tag/core-doctrine/index.html").
         
         Returns:
             Complete HTML document.
         """
-        base_href = f'href="{self.base_url.rstrip("/")}"' if self.base_url != "/" else ""
-        
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{self.escape_html(title)} — Pali Dictionary</title>
-    <link rel="stylesheet" href="{self._rel_url('css/style.css', 'index.html')}">
+    <link rel="stylesheet" href="{self._rel_url('css/style.css', page_path)}">
 </head>
 <body class="{page_type}">
     <header class="site-header">
         <div class="header-content">
-            <h1><a href="{self._rel_url('index.html', 'index.html')}">Pali Dictionary</a></h1>
+            <h1><a href="{self._rel_url('index.html', page_path)}">Pali Dictionary</a></h1>
             <p class="tagline">A structured Pali-English lexicon</p>
         </div>
     </header>
@@ -58,10 +57,11 @@ class HTMLRenderer:
     </main>
     
     <footer class="site-footer">
-        <p>Pali Dictionary — Generated from <a href="https://github.com/YOUR_ORG/shiny-adventure">shiny-adventure data</a></p>
+        <p>Pali Dictionary — Generated from <a href="{self.escape_html(self.data_repo_url)}">shiny-adventure data</a></p>
     </footer>
     
-    <script src="{self._rel_url('js/app.js', 'index.html')}"></script>
+    <script src="{self._rel_url('js/app.js', page_path)}"></script>
+    <script src="{self._rel_url('js/search.js', page_path)}"></script>
 </body>
 </html>"""
 

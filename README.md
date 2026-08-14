@@ -61,24 +61,20 @@ python3 -m http.server 8000 --directory dist
 
 ```bash
 python3 build.py \
-  --data-dir <path>    # Path to terms/ directory (default: ../shiny-adventure/terms)
-  --out <path>         # Output directory (default: ./dist)
-  --base-url <url>     # Base URL for the site (default: /)
+  --data-dir <path>         # Path to terms/ directory (default: ../shiny-adventure/terms)
+  --out <path>              # Output directory (default: ./dist)
+  --data-repo-url <url>     # URL to the data repository for footer link (default: https://github.com/YOUR_ORG/shiny-adventure)
 ```
 
-#### `--base-url` Explanation
+#### Example with Custom Data Repo URL
 
-If you're deploying to GitHub Pages:
-
-- **User/Organization page** (e.g., `username.github.io`): Use default `--base-url /`
-- **Project page** (e.g., `github.com/username/shiny-adventure-website`):
-  - If serving from the `gh-pages` branch: Use `--base-url /shiny-adventure-website/`
-  - If serving from the `docs/` folder on `main`: Use `--base-url /shiny-adventure-website/` or configure Pages settings to use the root
-
-Example:
 ```bash
-python3 build.py --data-dir ../shiny-adventure/terms --out dist --base-url /shiny-adventure-website/
+python3 build.py --data-dir ../shiny-adventure/terms --out dist --data-repo-url https://github.com/myorg/mydata-repo
 ```
+
+#### How Relative Paths Work
+
+This generator uses **relative paths per page**, ensuring the site works regardless of deployment location (GitHub Pages root, project subdirectory, localhost, etc.). All CSS/JS/link references are computed relative to each page's actual location in the output directory. No `<base>` tag or `--base-url` flag needed.
 
 ### Build Output
 
@@ -126,7 +122,7 @@ The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml
 
 **Setup steps:**
 
-1. In `deploy.yml`, replace `YOUR_ORG/shiny-adventure` with your actual GitHub org/repo slug:
+1. In `.github/workflows/deploy.yml`, replace `YOUR_ORG/shiny-adventure` with your actual GitHub org/repo slug:
    ```yaml
    - uses: actions/checkout@v4
      with:
@@ -134,11 +130,13 @@ The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml
        path: shiny-adventure
    ```
 
-2. Enable GitHub Pages in your repo settings:
-   - Go to **Settings → Pages**
-   - Source: **GitHub Actions** (or **Deploy from a branch** → select the branch, depending on workflow config)
+2. (Optional) In `build.py`, customize `--data-repo-url` if your data repo has a different URL. The default is `https://github.com/YOUR_ORG/shiny-adventure` (appears in the footer of all pages).
 
-3. Push to `main`, and the workflow will automatically build and deploy the site.
+3. Enable GitHub Pages in your repo settings:
+    - Go to **Settings → Pages**
+    - Source: **GitHub Actions** (or **Deploy from a branch** → select the branch, depending on workflow config)
+
+4. Push to `main`, and the workflow will automatically build and deploy the site.
 
 **Note**: The workflow checks out the `shiny-adventure` repo as a sibling. If that repo is private, the workflow will fail unless the checkout uses a personal access token or deploy key. For simplicity, ensure both repos are public, or use a deploy token.
 
@@ -215,7 +213,7 @@ We use only Python stdlib (json, pathlib, re, unicodedata, html, etc.) so the ge
 
 ### Why relative paths instead of absolute?
 
-Relative paths ensure the site works regardless of where it's deployed (GitHub Pages root, project page subdirectory, localhost, etc.). We compute relative paths per page based on directory depth.
+Relative paths ensure the site works regardless of where it's deployed (GitHub Pages root, project page subdirectory, localhost, etc.). The generator computes the correct relative URL from each page's location to reach shared assets (CSS, JS) and other pages. This eliminates the need for a `<base>` tag or `--base-url` flag.
 
 ### Can I customize the site layout?
 
@@ -255,6 +253,17 @@ To improve the generator:
 2. Test locally: `python3 build.py --data-dir ../shiny-adventure/terms --out dist`
 3. Review the generated `dist/` folder
 4. Commit and push to trigger the CI workflow
+
+## Customizing the Data Repo Footer Link
+
+Every page displays a footer link to the data repository. By default, this points to `https://github.com/YOUR_ORG/shiny-adventure`. You can customize it:
+
+1. When building locally, pass `--data-repo-url`:
+   ```bash
+   python3 build.py --data-dir ../shiny-adventure/terms --out dist --data-repo-url https://github.com/myorg/myrepo
+   ```
+
+2. In the GitHub Actions workflow (`.github/workflows/deploy.yml`), you can optionally pass the flag if needed, or rely on the default.
 
 ## License
 

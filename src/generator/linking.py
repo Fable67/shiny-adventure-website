@@ -98,20 +98,24 @@ class TermLinker:
         
         Returns:
             Tuple of (resolved_list, unresolved_list).
-            - resolved_list: list of dicts with keys 'normalized_term' and 'term'
+            - resolved_list: list of dicts with keys 'normalized_term' and 'term' (deduplicated by normalized_term, preserving first occurrence)
             - unresolved_list: list of strings that couldn't be resolved
         """
         resolved = []
         unresolved = []
+        seen_normalized = set()
         
         for related_str in related_terms:
             normalized = self.resolve_related_term(related_str)
             if normalized:
-                term_data = self.all_terms[normalized]
-                resolved.append({
-                    "normalized_term": normalized,
-                    "term": term_data.get("term", normalized),
-                })
+                # Only add if we haven't seen this normalized_term before (deduplicate)
+                if normalized not in seen_normalized:
+                    term_data = self.all_terms[normalized]
+                    resolved.append({
+                        "normalized_term": normalized,
+                        "term": term_data.get("term", normalized),
+                    })
+                    seen_normalized.add(normalized)
             else:
                 unresolved.append(related_str)
         

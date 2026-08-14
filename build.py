@@ -5,7 +5,7 @@ Reads term JSON files from a data directory and generates a complete static HTML
 suitable for GitHub Pages hosting.
 
 Usage:
-    python3 build.py --data-dir <path-to-terms> --out <output-dir> [--base-url <url>]
+    python3 build.py --data-dir <path-to-terms> --out <output-dir> [--data-repo-url <url>]
 
 Example:
     python3 build.py --data-dir ../shiny-adventure/terms --out dist
@@ -74,10 +74,10 @@ def main():
         help="Output directory (default: ./dist)"
     )
     parser.add_argument(
-        "--base-url",
+        "--data-repo-url",
         type=str,
-        default="/",
-        help="Base URL for the site (default: /). Use /shiny-adventure-website/ for project pages."
+        default="https://github.com/YOUR_ORG/shiny-adventure",
+        help="URL to the data repository (for footer link, default: https://github.com/YOUR_ORG/shiny-adventure)"
     )
     
     args = parser.parse_args()
@@ -85,7 +85,7 @@ def main():
     print(f"🔨 Pali Dictionary Static Site Generator")
     print(f"📂 Data directory: {args.data_dir}")
     print(f"📁 Output directory: {args.out}")
-    print(f"🔗 Base URL: {args.base_url}")
+    print(f"🔗 Data repo URL: {args.data_repo_url}")
     print()
     
     build_start = time.time()
@@ -116,7 +116,7 @@ def main():
     print(f"   ✓ Linker ready; {unresolved_count} related_term strings unresolved (will render as plain text)")
     
     # Create renderer
-    renderer = HTMLRenderer(base_url=args.base_url, linker=linker)
+    renderer = HTMLRenderer(linker=linker, data_repo_url=args.data_repo_url)
     
     # Build search index
     print("🔍 Building search index...")
@@ -130,7 +130,7 @@ def main():
     # Home page
     print("🏠 Generating home page...")
     home_content = renderer.render_index_page(all_terms, tag_counts, major_terms)
-    home_html = renderer.render_page_wrapper(home_content, "Home")
+    home_html = renderer.render_page_wrapper(home_content, "Home", page_path="index.html")
     write_html_file(output_dir, "index.html", home_html)
     pages_generated += 1
     
@@ -145,7 +145,7 @@ def main():
         page_title = f"{pali_headword}"
         
         term_content = renderer.render_term_page(norm_term, term_data, all_terms)
-        term_html = renderer.render_page_wrapper(term_content, page_title, page_type="term-page")
+        term_html = renderer.render_page_wrapper(term_content, page_title, page_type="term-page", page_path=f"term/{norm_term}.html")
         write_html_file(output_dir, f"term/{norm_term}.html", term_html)
         pages_generated += 1
     
@@ -154,21 +154,21 @@ def main():
     # Alphabetical index
     print("📑 Generating alphabetical index...")
     alpha_content = renderer.render_alphabet_index(all_terms)
-    alpha_html = renderer.render_page_wrapper(alpha_content, "Alphabetical Index", page_type="index")
+    alpha_html = renderer.render_page_wrapper(alpha_content, "Alphabetical Index", page_type="index", page_path="alphabet/index.html")
     write_html_file(output_dir, "alphabet/index.html", alpha_html)
     pages_generated += 1
     
     # Tag pages
     print("🏷️  Generating tag pages...")
     tag_index_content = renderer.render_tag_index(tag_counts)
-    tag_index_html = renderer.render_page_wrapper(tag_index_content, "Browse Tags", page_type="index")
+    tag_index_html = renderer.render_page_wrapper(tag_index_content, "Browse Tags", page_type="index", page_path="tags/index.html")
     write_html_file(output_dir, "tags/index.html", tag_index_html)
     pages_generated += 1
     
     for tag, count in sorted(tag_counts.items()):
         term_norms = loader.get_terms_by_tag(tag, all_terms)
         tag_content = renderer.render_tag_page(tag, term_norms, all_terms)
-        tag_html = renderer.render_page_wrapper(tag_content, f"Tag: {tag}", page_type="tag-page")
+        tag_html = renderer.render_page_wrapper(tag_content, f"Tag: {tag}", page_type="tag-page", page_path=f"tag/{tag}/index.html")
         write_html_file(output_dir, f"tag/{tag}/index.html", tag_html)
         pages_generated += 1
     
@@ -182,7 +182,7 @@ def main():
         title="Major Terms",
         list_type="major"
     )
-    major_list_html = renderer.render_page_wrapper(major_list_content, "Major Terms", page_type="index")
+    major_list_html = renderer.render_page_wrapper(major_list_content, "Major Terms", page_type="index", page_path="major/index.html")
     write_html_file(output_dir, "major/index.html", major_list_html)
     pages_generated += 1
     
@@ -193,7 +193,7 @@ def main():
         title="All Terms",
         list_type="terms"
     )
-    all_list_html = renderer.render_page_wrapper(all_list_content, "All Terms", page_type="index")
+    all_list_html = renderer.render_page_wrapper(all_list_content, "All Terms", page_type="index", page_path="terms/index.html")
     write_html_file(output_dir, "terms/index.html", all_list_html)
     pages_generated += 1
     
