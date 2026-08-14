@@ -6,9 +6,11 @@ on:
       - main
       - master
   workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -19,36 +21,51 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      submodule-changed: ${{ steps.check-submodule.outputs.changed }}
     steps:
-      - name: Checkout website repo
+      - name: Checkout website repo with submodules
         uses: actions/checkout@v4
         with:
-          path: website
+          submodules: recursive
 
-      - name: Checkout data repo
-        uses: actions/checkout@v4
-        with:
-          repository: YOUR_ORG/shiny-adventure
-          path: shiny-adventure
-          # If the data repo is private, uncomment the next line and use a personal access token:
-          # token: ${{ secrets.DATA_REPO_TOKEN }}
+      - name: Update submodule to latest upstream commit
+        if: github.event_name == 'schedule'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git submodule update --remote --merge data/shiny-adventure
+
+      - name: Check if submodule changed
+        id: check-submodule
+        run: |
+          if git diff --quiet -- data/shiny-adventure; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-       - name: Build site
-         working-directory: website
-         run: |
-           python3 build.py \
-             --data-dir ../shiny-adventure/terms \
-             --out dist
+      - name: Build site
+        run: |
+          python3 build.py --out dist
+
+      - name: Commit and push submodule pointer update
+        if: github.event_name == 'schedule' && steps.check-submodule.outputs.changed == 'true'
+        run: |
+          SUBMODULE_SHA=$(git -C data/shiny-adventure rev-parse --short HEAD)
+          git add data/shiny-adventure
+          git commit -m "chore: sync shiny-adventure submodule to ${SUBMODULE_SHA}"
+          git push
 
       - name: Upload artifact for Pages
         uses: actions/upload-pages-artifact@v2
         with:
-          path: 'website/dist'
+          path: 'dist'
 
   deploy:
     environment:

@@ -8,7 +8,7 @@ Usage:
     python3 build.py --data-dir <path-to-terms> --out <output-dir> [--data-repo-url <url>]
 
 Example:
-    python3 build.py --data-dir ../shiny-adventure/terms --out dist
+    python3 build.py --out dist
 """
 
 import sys
@@ -64,8 +64,8 @@ def main():
     parser.add_argument(
         "--data-dir",
         type=Path,
-        default=Path(__file__).parent.parent / "shiny-adventure" / "terms",
-        help="Path to terms/ directory (default: ../shiny-adventure/terms)"
+        default=Path(__file__).parent / "data" / "shiny-adventure" / "terms",
+        help="Path to terms/ directory (default: ./data/shiny-adventure/terms)"
     )
     parser.add_argument(
         "--out",
@@ -76,8 +76,8 @@ def main():
     parser.add_argument(
         "--data-repo-url",
         type=str,
-        default="https://github.com/YOUR_ORG/shiny-adventure",
-        help="URL to the data repository (for footer link, default: https://github.com/YOUR_ORG/shiny-adventure)"
+        default="https://github.com/timedrapery/shiny-adventure",
+        help="URL to the data repository (for footer link, default: https://github.com/timedrapery/shiny-adventure)"
     )
     
     args = parser.parse_args()

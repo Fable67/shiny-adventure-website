@@ -1,6 +1,6 @@
 # Pali Dictionary Static Website
 
-A fast, pure-Python static site generator that transforms the [shiny-adventure](https://github.com/YOUR_ORG/shiny-adventure) Pali dictionary term data into a complete, searchable HTML website suitable for GitHub Pages hosting.
+A fast, pure-Python static site generator that transforms the [shiny-adventure](https://github.com/timedrapery/shiny-adventure) Pali dictionary term data into a complete, searchable HTML website suitable for GitHub Pages hosting.
 
 ## Features
 
@@ -20,7 +20,11 @@ A fast, pure-Python static site generator that transforms the [shiny-adventure](
 shiny-adventure-website/
 ├── README.md                  # This file
 ├── .gitignore                 # Ignore dist/ and build artifacts
+├── .gitmodules                # Git submodule configuration
 ├── build.py                   # Main build script (entry point)
+├── data/
+│   └── shiny-adventure/       # Git submodule (shared term data)
+│       └── terms/             # Term JSON files
 ├── src/
 │   ├── generator/
 │   │   ├── __init__.py
@@ -48,8 +52,11 @@ Requires **Python 3.6+** (uses only stdlib).
 ```bash
 cd shiny-adventure-website
 
-# Build the site
-python3 build.py --data-dir ../shiny-adventure/terms --out dist
+# Initialize submodule (required on first clone)
+git submodule update --init --recursive
+
+# Build the site (uses data/shiny-adventure/terms by default)
+python3 build.py --out dist
 
 # Serve locally for testing (Python 3.7+)
 python3 -m http.server 8000 --directory dist
@@ -57,19 +64,24 @@ python3 -m http.server 8000 --directory dist
 # Visit http://localhost:8000 in your browser
 ```
 
+Alternatively, clone with submodules in one step:
+```bash
+git clone --recurse-submodules <this-repo-url>
+```
+
 ### Command-line Options
 
 ```bash
 python3 build.py \
-  --data-dir <path>         # Path to terms/ directory (default: ../shiny-adventure/terms)
+  --data-dir <path>         # Path to terms/ directory (default: ./data/shiny-adventure/terms)
   --out <path>              # Output directory (default: ./dist)
-  --data-repo-url <url>     # URL to the data repository for footer link (default: https://github.com/YOUR_ORG/shiny-adventure)
+  --data-repo-url <url>     # URL to the data repository for footer link (default: https://github.com/timedrapery/shiny-adventure)
 ```
 
 #### Example with Custom Data Repo URL
 
 ```bash
-python3 build.py --data-dir ../shiny-adventure/terms --out dist --data-repo-url https://github.com/myorg/mydata-repo
+python3 build.py --out dist --data-repo-url https://github.com/myorg/mydata-repo
 ```
 
 #### How Relative Paths Work
@@ -112,54 +124,45 @@ dist/
 
 ## Deployment
 
-### Option 1: GitHub Actions (Recommended)
+### GitHub Actions (Recommended)
 
-The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that:
+The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automates builds and deployment to GitHub Pages.
 
-1. **On every push to `main`**: Checks out both this repo and the data repo
-2. **Builds the site** using `python3 build.py`
-3. **Deploys to GitHub Pages** using the Pages artifact upload
+**How it works:**
+
+- The `shiny-adventure` data repo is included as a **git submodule** at `data/shiny-adventure`, pinning it to a specific commit
+- **On push to `main`**: The workflow checks out the website repo with its submodule, builds the site, and deploys to GitHub Pages
+- **Every 6 hours (scheduled)**: The workflow pulls the latest commit from the data repo's default branch (`main`), detects changes, rebuilds and redeploys if there are new terms, and automatically commits the updated submodule pointer back to this repo's `main` branch — ensuring the pinned version stays in sync with deployed content
+- **No extra secrets needed**: The submodule URL is public; `GITHUB_TOKEN` (provided by GitHub automatically) has sufficient permissions for checkout + deploy
 
 **Setup steps:**
 
-1. In `.github/workflows/deploy.yml`, replace `YOUR_ORG/shiny-adventure` with your actual GitHub org/repo slug:
-   ```yaml
-   - uses: actions/checkout@v4
-     with:
-       repository: YOUR_ORG/shiny-adventure  # ← Replace this
-       path: shiny-adventure
-   ```
+1. **Enable GitHub Pages** in your repo settings:
+   - Go to **Settings → Pages**
+   - Source: **GitHub Actions**
 
-2. (Optional) In `build.py`, customize `--data-repo-url` if your data repo has a different URL. The default is `https://github.com/YOUR_ORG/shiny-adventure` (appears in the footer of all pages).
+2. **Configure workflow permissions** (required for scheduled polling to auto-commit submodule updates):
+   - Go to **Settings → Actions → General**
+   - Under "Workflow permissions", select **"Read and write permissions"**
+   - This allows the scheduled workflow to push the submodule pointer update back to `main`
 
-3. Enable GitHub Pages in your repo settings:
-    - Go to **Settings → Pages**
-    - Source: **GitHub Actions** (or **Deploy from a branch** → select the branch, depending on workflow config)
+3. Push to `main`, and the workflow will automatically build and deploy. The scheduled trigger will poll every 6 hours and rebuild when the data repo updates.
 
-4. Push to `main`, and the workflow will automatically build and deploy the site.
+**Customizing the data repo:**
 
-**Note**: The workflow checks out the `shiny-adventure` repo as a sibling. If that repo is private, the workflow will fail unless the checkout uses a personal access token or deploy key. For simplicity, ensure both repos are public, or use a deploy token.
+If you're using a fork of `shiny-adventure` or a different data repo entirely:
 
-### Option 2: Manual Deployment (Single Repo)
-
-If you prefer a self-contained repo without cross-repo dependencies:
-
-1. **Copy the term JSON files** from `shiny-adventure/terms/` into this repo (e.g., `data/terms/`)
-2. **Commit them** to git (no need for `.gitignore` on `data/`)
-3. **Update `deploy.yml`** to skip the second checkout and point to the local `data/` directory:
+1. Update the submodule remote:
    ```bash
-   python3 build.py --data-dir data/terms --out dist
+   git submodule set-url data/shiny-adventure <new-repo-url>
    ```
 
-This is simpler for a standalone GitHub Pages site but requires maintaining a copy of the term data.
+2. Update the footer link default in `build.py`:
+   ```python
+   default="https://github.com/yourorg/your-data-repo"
+   ```
 
-### Option 3: Manual Build and Commit
-
-1. Build locally: `python3 build.py --data-dir ../shiny-adventure/terms --out dist`
-2. Commit the `dist/` folder
-3. Point GitHub Pages to the `dist/` folder (or rename to `docs/` and point there)
-
-**Not recommended** because it bloats the repo with generated HTML; prefer Option 1 (Actions) or Option 2 (vendored data).
+3. Commit and push these changes, then the workflow will use the new data source.
 
 ## Data Format
 
@@ -254,21 +257,26 @@ To improve the generator:
 3. Review the generated `dist/` folder
 4. Commit and push to trigger the CI workflow
 
-## Customizing the Data Repo Footer Link
+## Keeping the Submodule Up to Date
 
-Every page displays a footer link to the data repository. By default, this points to `https://github.com/YOUR_ORG/shiny-adventure`. You can customize it:
+### Locally
 
-1. When building locally, pass `--data-repo-url`:
-   ```bash
-   python3 build.py --data-dir ../shiny-adventure/terms --out dist --data-repo-url https://github.com/myorg/myrepo
-   ```
+After cloning, pull the latest upstream data manually:
 
-2. In the GitHub Actions workflow (`.github/workflows/deploy.yml`), you can optionally pass the flag if needed, or rely on the default.
+```bash
+git submodule update --remote --merge data/shiny-adventure
+```
+
+This fetches the latest commit from the data repo's default branch and merges it into your local submodule working tree.
+
+### On GitHub
+
+The scheduled workflow (runs every 6 hours) automatically updates the submodule and commits the pointer when changes are detected. You can also manually trigger a rebuild by visiting **Actions** → **Build and Deploy to GitHub Pages** → **Run workflow** → **Branch: main** → **Run workflow**.
 
 ## License
 
-This generator and website are part of the [shiny-adventure](https://github.com/YOUR_ORG/shiny-adventure) project. See the main repo for licensing details.
+This generator and website are part of the [shiny-adventure](https://github.com/timedrapery/shiny-adventure) project. See the main repo for licensing details.
 
 ## Support
 
-For issues or suggestions, open an issue on the [shiny-adventure](https://github.com/YOUR_ORG/shiny-adventure) repository or the website repo.
+For issues or suggestions, open an issue on the [shiny-adventure](https://github.com/timedrapery/shiny-adventure) repository or the website repo.

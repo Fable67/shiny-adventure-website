@@ -1,0 +1,3 @@
+[submodule "data/shiny-adventure"]
+	path = data/shiny-adventure
+	url = https://github.com/timedrapery/shiny-adventure.git
