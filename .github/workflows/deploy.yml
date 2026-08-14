@@ -34,7 +34,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git submodule update --remote --merge data/shiny-adventure
+          git submodule update --remote data/shiny-adventure
 
       - name: Check if submodule changed
         id: check-submodule
@@ -46,7 +46,7 @@ jobs:
           fi
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -54,18 +54,18 @@ jobs:
         run: |
           python3 build.py --out dist
 
+      - name: Upload artifact for Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'dist'
+
       - name: Commit and push submodule pointer update
         if: github.event_name == 'schedule' && steps.check-submodule.outputs.changed == 'true'
         run: |
           SUBMODULE_SHA=$(git -C data/shiny-adventure rev-parse --short HEAD)
           git add data/shiny-adventure
           git commit -m "chore: sync shiny-adventure submodule to ${SUBMODULE_SHA}"
-          git push
-
-      - name: Upload artifact for Pages
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: 'dist'
+          git push || echo "::warning::failed to push submodule pointer update — check repo Settings > Actions > General > Workflow permissions is set to Read and write"
 
   deploy:
     environment:
@@ -76,4 +76,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
