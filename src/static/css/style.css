@@ -4,6 +4,7 @@
     --color-primary: #1a3a4a;
     --color-accent: #d4934f;
     --color-accent-text: #945d24;
+    --color-primary-text: var(--color-primary);
     --color-accent-focus: #b8742d;
     --color-major: #2d5a6e;
     --color-minor: #647774;
@@ -55,7 +56,7 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1.3;
     margin-top: 1.5rem;
     margin-bottom: 0.75rem;
-    color: var(--color-primary);
+    color: var(--color-primary-text);
     font-weight: 600;
 }
 
@@ -78,7 +79,7 @@ p {
 }
 
 a {
-    color: var(--color-primary);
+    color: var(--color-primary-text);
     text-decoration: none;
     border-bottom: 1px solid transparent;
     transition: all 0.2s ease;
@@ -372,7 +373,7 @@ main {
 .stat-number {
     font-size: 2.5rem;
     font-weight: 700;
-    color: var(--color-primary);
+    color: var(--color-primary-text);
     margin-bottom: 0.5rem;
 }
 
@@ -404,7 +405,7 @@ main {
     text-align: center;
     font-weight: 600;
     transition: all 0.2s;
-    color: var(--color-primary);
+    color: var(--color-primary-text);
 }
 
 .browse-link:hover {
@@ -445,7 +446,7 @@ main {
 }
 
 .term-preview h3 a {
-    color: var(--color-primary);
+    color: var(--color-primary-text);
 }
 
 .translation {
@@ -477,7 +478,7 @@ main {
     font-family: var(--font-serif);
     font-size: 2.5rem;
     margin: 0 0 0.75rem 0;
-    color: var(--color-primary);
+    color: var(--color-primary-text);
 }
 
 .term-meta {
@@ -496,7 +497,7 @@ main {
 .term-translation .preferred-translation {
     font-size: 1.2rem;
     font-weight: 500;
-    color: var(--color-primary);
+    color: var(--color-primary-text);
     margin: 0;
 }
 
@@ -661,7 +662,7 @@ section[class^="term-"] h2 {
 
 .related-term-link {
     background-color: rgba(26, 58, 74, 0.05);
-    color: var(--color-primary);
+    color: var(--color-primary-text);
     cursor: pointer;
 }
 
@@ -938,7 +939,7 @@ section[class^="term-"] h2 {
 }
 
 .term-item h3 a {
-    color: var(--color-primary);
+    color: var(--color-primary-text);
 }
 
 .term-item .trans {
@@ -1004,6 +1005,8 @@ section[class^="term-"] h2 {
         --color-bg: #1a1a1a;
         --color-bg-alt: #2d2d2d;
         --color-border: #444;
+        --color-primary-text: #7fb8d4;
+        --color-accent-text: #e0a865;
     }
     
     a:focus-visible,
@@ -1021,7 +1024,9 @@ section[class^="term-"] h2 {
     .term-page,
     .browse-link,
     .term-preview,
-    .term-list li {
+    .term-list li,
+    .stat,
+    .term-item {
         background: var(--color-bg-alt);
         border-color: var(--color-border);
     }
