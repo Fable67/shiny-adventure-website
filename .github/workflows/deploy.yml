@@ -1,0 +1,63 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout website repo
+        uses: actions/checkout@v4
+        with:
+          path: website
+
+      - name: Checkout data repo
+        uses: actions/checkout@v4
+        with:
+          repository: YOUR_ORG/shiny-adventure
+          path: shiny-adventure
+          # If the data repo is private, uncomment the next line and use a personal access token:
+          # token: ${{ secrets.DATA_REPO_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Build site
+        working-directory: website
+        run: |
+          python3 build.py \
+            --data-dir ../shiny-adventure/terms \
+            --out dist \
+            --base-url /shiny-adventure-website/
+
+      - name: Upload artifact for Pages
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: 'website/dist'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
