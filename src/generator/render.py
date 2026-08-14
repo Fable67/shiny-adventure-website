@@ -45,6 +45,7 @@ class HTMLRenderer:
     <link rel="stylesheet" href="{self._rel_url('css/style.css', page_path)}">
 </head>
 <body class="{page_type}">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <header class="site-header">
         <div class="header-content">
             <h1><a href="{self._rel_url('index.html', page_path)}">Pali Dictionary</a></h1>
@@ -52,7 +53,7 @@ class HTMLRenderer:
         </div>
     </header>
     
-    <main>
+    <main id="main-content">
 {content}
     </main>
     
@@ -111,18 +112,22 @@ class HTMLRenderer:
         featured_html = ""
         for norm_term, term_data in featured_terms:
             featured_html += f"""        <div class="term-preview">
-            <h3><a href="{self._rel_url(f'term/{norm_term}.html', 'index.html')}">{self.escape_html(term_data.get('term', norm_term))}</a></h3>
-            <p class="translation">{self.escape_html(term_data.get('preferred_translation', ''))}</p>
-            <p class="definition">{self.escape_html(term_data.get('definition', '')[:80])}...</p>
-        </div>
+             <h3><a href="{self._rel_url(f'term/{norm_term}.html', 'index.html')}" lang="pi">{self.escape_html(term_data.get('term', norm_term))}</a></h3>
+             <p class="translation">{self.escape_html(term_data.get('preferred_translation', ''))}</p>
+             <p class="definition">{self.escape_html(term_data.get('definition', '')[:80])}...</p>
+         </div>
 """
         
         return f"""        <section class="home-hero">
             <div class="hero-content">
                 <p>A comprehensive, structured Pali-English lexicon with rich semantic links, translation policies, and doctrinal context.</p>
                 <div class="search-box">
-                    <input type="search" id="search-input" placeholder="Search {total_count:,} terms...">
-                    <div id="search-results" class="search-results"></div>
+                    <form role="search" aria-label="Site search" id="search-form">
+                        <label for="search-input" class="visually-hidden">Search the dictionary</label>
+                        <input type="search" id="search-input" name="q" placeholder="Search {total_count:,} terms..." autocomplete="off">
+                    </form>
+                    <p id="search-status" class="visually-hidden" role="status" aria-live="polite"></p>
+                    <div id="search-results" class="search-results" role="region" aria-label="Search results"></div>
                 </div>
             </div>
         </section>
@@ -187,7 +192,7 @@ class HTMLRenderer:
         # Build HTML
         content = f"""        <article class="term-page">
             <header class="term-header">
-                <h1 class="term-pali">{pali}</h1>
+                <h1 class="term-pali" lang="pi">{pali}</h1>
                 <div class="term-meta">
                     <span class="badge badge-{entry_type}">{entry_type.title()}</span>
                     <span class="badge badge-status badge-{status}">{status.title()}</span>
@@ -257,11 +262,12 @@ class HTMLRenderer:
             content += """            <section class="term-context-rules">
                 <h2>Context Rules</h2>
                 <table class="rules-table">
+                    <caption class="visually-hidden">Rules for how this term is rendered or interpreted in different contexts</caption>
                     <thead>
                         <tr>
-                            <th>Context</th>
-                            <th>Rendering</th>
-                            <th>Notes</th>
+                            <th scope="col">Context</th>
+                            <th scope="col">Rendering</th>
+                            <th scope="col">Notes</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -295,7 +301,7 @@ class HTMLRenderer:
                 notes_ex = example.get("notes")
                 
                 content += f"""                    <div class="example">
-                        <p class="pali"><em>{pali_ex}</em></p>
+                        <p class="pali" lang="pi"><em>{pali_ex}</em></p>
 """
                 if trans_ex:
                     content += f"""                        <p class="translation">{self.escape_html(trans_ex)}</p>
@@ -416,8 +422,9 @@ class HTMLRenderer:
             </section>
 """
         
-        content += """            <nav class="term-nav">
-                <a href="javascript:history.back()" class="nav-link">← Back</a>
+        back_url = self._rel_url('terms/index.html', f'term/{normalized_term}.html')
+        content += f"""            <nav class="term-nav" aria-label="Term page navigation">
+                <a href="{back_url}" id="back-link" class="nav-link">← Back to all terms</a>
             </nav>
         </article>
 """
@@ -463,10 +470,10 @@ class HTMLRenderer:
                 entry_type = term_data.get("entry_type", "minor")
                 url = self._rel_url(f"term/{norm_term}.html", "alphabet/index.html")
                 content += f"""                    <li>
-                        <a href="{url}" class="term-link">{pali}</a>
-                        <span class="badge badge-{entry_type}">{entry_type}</span>
-                        <span class="trans">{trans}</span>
-                    </li>
+                         <a href="{url}" class="term-link" lang="pi">{pali}</a>
+                         <span class="badge badge-{entry_type}">{entry_type}</span>
+                         <span class="trans">{trans}</span>
+                     </li>
 """
             content += """                </ul>
 """
@@ -525,19 +532,19 @@ class HTMLRenderer:
 """
         
         for norm_term in sorted(term_norms):
-            if norm_term not in all_terms:
-                continue
-            term_data = all_terms[norm_term]
-            pali = self.escape_html(term_data.get("term", norm_term))
-            trans = self.escape_html(term_data.get("preferred_translation", ""))
-            entry_type = term_data.get("entry_type", "minor")
-            url = self._rel_url(f"term/{norm_term}.html", f"tag/{tag}/index.html")
-            
-            content += f"""                <div class="term-item">
-                    <h3><a href="{url}" class="term-link">{pali}</a></h3>
-                    <p class="trans">{trans}</p>
-                    <span class="badge badge-{entry_type}">{entry_type}</span>
-                </div>
+             if norm_term not in all_terms:
+                 continue
+             term_data = all_terms[norm_term]
+             pali = self.escape_html(term_data.get("term", norm_term))
+             trans = self.escape_html(term_data.get("preferred_translation", ""))
+             entry_type = term_data.get("entry_type", "minor")
+             url = self._rel_url(f"term/{norm_term}.html", f"tag/{tag}/index.html")
+             
+             content += f"""                <div class="term-item">
+                     <h3><a href="{url}" class="term-link" lang="pi">{pali}</a></h3>
+                     <p class="trans">{trans}</p>
+                     <span class="badge badge-{entry_type}">{entry_type}</span>
+                 </div>
 """
         
         content += """            </div>
@@ -568,19 +575,19 @@ class HTMLRenderer:
 """
         
         for norm_term in sorted(term_norms):
-            if norm_term not in all_terms:
-                continue
-            term_data = all_terms[norm_term]
-            pali = self.escape_html(term_data.get("term", norm_term))
-            trans = self.escape_html(term_data.get("preferred_translation", ""))
-            entry_type = term_data.get("entry_type", "minor")
-            url = self._rel_url(f"term/{norm_term}.html", f"{list_type}/index.html")
-            
-            content += f"""                <div class="term-item">
-                    <h3><a href="{url}">{pali}</a></h3>
-                    <span class="badge badge-{entry_type}">{entry_type}</span>
-                    <p class="trans">{trans}</p>
-                </div>
+             if norm_term not in all_terms:
+                 continue
+             term_data = all_terms[norm_term]
+             pali = self.escape_html(term_data.get("term", norm_term))
+             trans = self.escape_html(term_data.get("preferred_translation", ""))
+             entry_type = term_data.get("entry_type", "minor")
+             url = self._rel_url(f"term/{norm_term}.html", f"{list_type}/index.html")
+             
+             content += f"""                <div class="term-item">
+                     <h3><a href="{url}" lang="pi">{pali}</a></h3>
+                     <span class="badge badge-{entry_type}">{entry_type}</span>
+                     <p class="trans">{trans}</p>
+                 </div>
 """
         
         content += """            </div>

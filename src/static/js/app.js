@@ -18,6 +18,9 @@
         
         // Setup related term previews
         setupRelatedTermHovers();
+        
+        // Setup back link progressive enhancement
+        setupBackLink();
     }
 
     /**
@@ -31,7 +34,8 @@
             const target = document.querySelector(link.getAttribute('href'));
             if (target && !link.href.includes('javascript:')) {
                 e.preventDefault();
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
             }
         });
     }
@@ -55,7 +59,23 @@
         // For now, just direct linking is sufficient
     }
 
-
+    /**
+     * Setup back link progressive enhancement
+     */
+    function setupBackLink() {
+        const backLink = document.getElementById('back-link');
+        if (!backLink) return;
+        try {
+            if (document.referrer && new URL(document.referrer).host === window.location.host) {
+                backLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    history.back();
+                });
+            }
+        } catch (err) {
+            // Invalid referrer URL — ignore, fallback href still works
+        }
+    }
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {

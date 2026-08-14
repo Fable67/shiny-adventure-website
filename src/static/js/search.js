@@ -8,6 +8,8 @@ class PaliDictionarySearch {
         this.indexUrl = indexUrl;
         this.inputEl = document.querySelector(inputSelector);
         this.resultsEl = document.querySelector(resultsSelector);
+        this.statusEl = document.querySelector('#search-status');
+        this.formEl = document.querySelector('#search-form');
         this.searchIndex = [];
         this.init();
     }
@@ -22,10 +24,15 @@ class PaliDictionarySearch {
             }
             this.searchIndex = await response.json();
             
+            // Prevent form submission for live search
+            if (this.formEl) {
+                this.formEl.addEventListener('submit', (e) => e.preventDefault());
+            }
+            
             // Set up event listeners
             if (this.inputEl) {
                 this.inputEl.addEventListener('input', (e) => this.onSearch(e));
-                this.inputEl.addEventListener('blur', () => setTimeout(() => this.hide(), 200));
+                this.inputEl.addEventListener('blur', () => setTimeout(() => this.hide(), 300));
                 this.inputEl.addEventListener('focus', (e) => {
                     if (this.inputEl.value.length > 0) {
                         this.show();
@@ -42,6 +49,9 @@ class PaliDictionarySearch {
         
         if (query.length === 0) {
             this.hide();
+            if (this.statusEl) {
+                this.statusEl.textContent = '';
+            }
             return;
         }
         
@@ -139,9 +149,19 @@ class PaliDictionarySearch {
     displayResults(results, query) {
         this.resultsEl.innerHTML = '';
         
+        if (results.length === 0) {
+            if (this.statusEl) {
+                this.statusEl.textContent = `No results found for "${query}"`;
+            }
+            return;
+        }
+        
+        // Create semantic <ul> wrapper
+        const ul = document.createElement('ul');
+        
         for (const result of results) {
-            const div = document.createElement('div');
-            div.className = 'search-result';
+            const li = document.createElement('li');
+            li.className = 'search-result';
             
             // Build the link URL (normalized_term is already safe as a slug)
             const baseUrl = this.getBaseUrl();
@@ -151,17 +171,24 @@ class PaliDictionarySearch {
             const highlightedTerm = this.highlightQuery(this.escapeHtml(result.term), query);
             const highlightedTrans = this.highlightQuery(this.escapeHtml(result.preferred_translation), query);
             
-            div.innerHTML = `
-                <a href="${resultUrl}" style="text-decoration: none; color: inherit; display: block; padding: 0.5rem 0; border: none;">
-                    <span class="search-result-term">${highlightedTerm}</span>
-                    <span class="search-result-trans">${highlightedTrans}</span>
-                    <span class="search-result-badge">
-                        <span class="badge badge-${this.escapeHtml(result.entry_type)}" style="margin: 0;">${this.escapeHtml(result.entry_type)}</span>
-                    </span>
-                </a>
-            `;
+             li.innerHTML = `
+                 <a href="${resultUrl}" class="search-result-link">
+                     <span class="search-result-term" lang="pi">${highlightedTerm}</span>
+                     <span class="search-result-trans">${highlightedTrans}</span>
+                     <span class="search-result-badge">
+                         <span class="badge badge-${this.escapeHtml(result.entry_type)}">${this.escapeHtml(result.entry_type)}</span>
+                     </span>
+                 </a>
+             `;
             
-            this.resultsEl.appendChild(div);
+            ul.appendChild(li);
+        }
+        
+        this.resultsEl.appendChild(ul);
+        
+        // Update status message for live region
+        if (this.statusEl) {
+            this.statusEl.textContent = `${results.length} result${results.length === 1 ? '' : 's'} found for "${query}"`;
         }
     }
 
